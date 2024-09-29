@@ -1,0 +1,57 @@
+name: Build, Test, and Benchmark
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake g++ libgtest-dev libbenchmark-dev
+
+      - name: Build with CMake
+        run: mkdir build && cmake -S . -B build && cmake --build build
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build_artifact
+          path: ./build
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build_artifact
+          path: ./build
+
+      - name: Run unit tests
+        run: chmod +x ./build/tests/runTests && ./build/tests/runTests
+
+  benchmark:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Install benchmark dependencies
+        run: sudo apt-get update && sudo apt-get install -y libbenchmark-dev
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build_artifact
+          path: ./build
+
+      - name: Run benchmarks
+        run: chmod +x ./build/benchmarks/runBenchmark && ./build/benchmarks/runBenchmark
